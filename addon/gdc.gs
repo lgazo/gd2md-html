@@ -107,6 +107,15 @@ gdc.config = function(config) {
   if (config.suppressInfo === true) {
     gdc.suppressInfo = true;
   }
+  if (config.useImageAltTitleAsName === true) {
+    gdc.useImageAltTitleAsName = true;
+  }
+  if (config.defaultImagePath != null && config.defaultImagePath != undefined && config.defaultImagePath.trim().length > 0) {
+    gdc.defaultImagePath = config.defaultImagePath;
+  }
+  if (config.hideAlerts === true) {
+    gdc.hideAlerts = true;
+  }  
 };
 
 // Setup for each conversion run.
@@ -168,6 +177,8 @@ gdc.init = function(docType) {
   gdc.imgBlobs = [];  // Save images for zip file.
   gdc.imageCounter = 0;
   gdc.attachments = [];
+  gdc.useImageAltTitleAsName = false;
+  gdc.hideAlerts = false;
 
 }; // end gdc.init()
 
@@ -945,6 +956,18 @@ gdc.handleInlineDrawing = function() {
 gdc.handleImage = function(imageElement) {
   // Figure out all the image file information for link.
   // [Storage is optional.]
+
+//  gdc.alert('image element ' + imageElement.getLinkUrl());  
+//  var atts = imageElement.getAttributes();
+//  var str = "";
+//  for (var att in atts) {
+//    str += att + ":" + atts[att];
+//  }
+//  gdc.alert('image element attributes' + str);
+//  gdc.alert('image element alt title' + imageElement.getAltTitle());
+//  gdc.alert('image element alt descr' + imageElement.getAltDescription());
+  
+  
   var img = imageElement.asInlineImage();
   var imgBlob = img.getBlob();
   var contentType = imgBlob.getContentType();
@@ -958,8 +981,16 @@ gdc.handleImage = function(imageElement) {
   }
 
   // Use current time to make file name unique (for loose files).
-  var fnameBase = gdc.imgName + gdc.imageCounter + fileType;
-  var fname = gdc.imgName + gdc.imageCounter + '_' + Date.now() + fileType;
+  var fnameBase;
+  var fname;
+  if(!gdc.useImageAltTitleAsName || (gdc.useImageAltTitleAsName && (imageElement.getAltTitle() == null || imageElement.getAltTitle() == undefined))) {
+    fnameBase = gdc.imgName + gdc.imageCounter + fileType;
+    fname = gdc.imgName + gdc.imageCounter + '_' + Date.now() + fileType;
+  } else  {
+    fnameBase = imageElement.getAltTitle();
+    fname = imageElement.getAltTitle();
+  }
+  
   gdc.imageCounter++;
 
   // Save for zip if option available and selected.
@@ -974,13 +1005,14 @@ gdc.handleImage = function(imageElement) {
   gdc.hasImages = true; // So we can provide a note at the top.
   gdc.alert('inline image link here (to ' + gdc.defaultImagePath+fnameBase
     + '). Store image on your image server and adjust path/filename if necessary.');
+  var description = imageElement.getAltDescription() && imageElement.getAltDescription().trim().length > 0 ? imageElement.getAltDescription() : 'alt_text';
   if (gdc.isHTML) {
     // Width is an optional attribute for img tag, but let's leave the hint.
     gdc.writeStringToBuffer('\n<img src="'
       + gdc.defaultImagePath+fnameBase
-      + '" width="" alt="alt_text" title="image_tooltip">\n');
+      + '" width="" alt="' + description + '" title="image_tooltip">\n');
   } else {
-    gdc.writeStringToBuffer('<newline>![alt_text](' + gdc.defaultImagePath+fnameBase+' "image_tooltip")<newline>');
+    gdc.writeStringToBuffer('<newline>![' + description + '](' + gdc.defaultImagePath+fnameBase+' "image_tooltip")<newline>');
   }
 };
 
@@ -1115,6 +1147,9 @@ gdc.flushFootnoteBuffer = function() {
 // Insert an alert message into the output.
 // And add a message at the top of the Markdown/HTML source too.
 gdc.alert = function(message) {
+  if(gdc.hideAlerts) {
+    return;
+  }
   gdc.alertCount++;
   var id = 'gdcalert'+gdc.alertCount;
   var redBoldSpan = '<span style="color: red; font-weight: bold">';

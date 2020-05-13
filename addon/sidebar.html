@@ -28,7 +28,6 @@ input[type="button"].invisible {background: transparent;border: none;font-size:0
 }
 </style>
 
-
 <!-- Top of sidebar UI elements. -->
 <input type="button" class="blue" value="Markdown" onclick="markdown()">
 <input type="button" class="blue" value="HTML" onclick="html()">
@@ -66,7 +65,20 @@ Render HTML tags
 <label>
 <input type="checkbox" id="suppress_info">
 Suppress top comment
-</label>
+</label><br>
+<label>
+<input type="checkbox" id="useImageAltTitleAsName">
+Use image alternative title text as image file name
+</label><br>
+<label>
+Use different image path prefix (default is "images/")
+<input type="text" id="defaultImagePath">
+</label><br>
+<label>
+<input type="checkbox" id="hideAlerts">
+Hide alert messages and produce just the output
+</label><br>
+
 
 <!-- Docs, bug link. -->
 <br>
@@ -116,6 +128,8 @@ For more details, click the Docs link above.`
     config.wrapHTML = false;
     config.renderHTMLTags = false;
     config.suppressInfo= false;
+    config.useImageAltTitleAsName = false;
+    config.hideAlerts = false;
 
     // Config settings from UI.
     if (document.getElementById('demote_headings').checked) {
@@ -133,6 +147,15 @@ For more details, click the Docs link above.`
     if (document.getElementById('suppress_info').checked) {
       config.suppressInfo = true;
     }
+    if (document.getElementById('useImageAltTitleAsName').checked) {
+      config.useImageAltTitleAsName = true;
+    }
+    if (document.getElementById('hideAlerts').checked) {
+      config.hideAlerts = true;
+    }
+    
+    config.defaultImagePath = document.getElementById('defaultImagePath').value;
+    
 };
     
   // Make the calls to the server, and send some callbacks for
